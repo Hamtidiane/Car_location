@@ -5,6 +5,10 @@ import com.fasterxml.jackson.annotation.OptBoolean;
 import jakarta.persistence.*;
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDate;
 
 @Data
 @Entity
@@ -51,6 +55,17 @@ public abstract class Vehicle {
 
     //prix de base
     private Double basePrice;
+
+    //date debut indisponibilité
+    @Getter
+    @Setter
+    private LocalDate unavailableStartDate;
+
+    //date fin indisponibilité
+    @Getter
+    @Setter
+    private LocalDate unavailableEndDate;
+
 
     // La méthode `getType` est spécifique, donc elle reste dans la classe.
     public abstract String getType();

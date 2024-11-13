@@ -1,66 +1,74 @@
 package edu.campus.numerique.vehicles.service;
 
-
-
+import edu.campus.numerique.vehicles.Motorcycle;
+import edu.campus.numerique.vehicles.UtilityVehicle;
 import edu.campus.numerique.vehicles.Vehicle;
 import edu.campus.numerique.vehicles.repository.VehicleRepository;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-@Data
+
 @Service
 public class VehiclesServiceImpl implements VehiclesService {
 
-    private  VehicleRepository vehicleRepository;
+    private final VehicleRepository vehicleRepository;
 
+    @Autowired
     public VehiclesServiceImpl(VehicleRepository vehicleRepository) {
         this.vehicleRepository = vehicleRepository;
     }
 
-
+    @Override
     public List<Vehicle> getAllVehicles() {
-        return List.of();
-    }
-
-    public Vehicle getVehicleById(Long id) {
-        return null;
-    }
-
-
-    public Vehicle saveVehicle(Vehicle vehicle) {
-        return null;
+        return vehicleRepository.findAll();
     }
 
     @Override
-    public Vehicle updateVehicle(Vehicle vehicle) {
-        return null;
+    public Optional<Vehicle> getVehicleById(Long id) {
+        return vehicleRepository.findById(id);
     }
 
     @Override
-    public void deleteVehicle(Long id) {
-
+    public boolean isVehicleUnavailable(Long id, LocalDate start, LocalDate end) {
+        // Implémentation de la logique pour vérifier la disponibilité
+        return false;  // Exemple, à adapter selon votre logique
     }
 
-    public List<Vehicle> getAllVehicules() {
-        return vehicleRepository.findAll(); // Récupère tous les véhicules
+    @Override
+    public Vehicle createVehicle(Vehicle newVehicle) {
+        return vehicleRepository.save(newVehicle);
     }
 
-    public Vehicle getVehiculeById(Long id) {
-        Optional<Vehicle> optionalVehicule = vehicleRepository.findById(id);
-        return optionalVehicule.orElseThrow(() -> new RuntimeException("Véhicule non trouvé")); // Lève une exception si le véhicule n'est pas trouvé
+    @Override
+    public Optional<Vehicle> updateVehicle(Long id, Vehicle updatedVehicle) {
+        return vehicleRepository.findById(id).map(vehicle -> {
+            vehicle.setRegistration(updatedVehicle.getRegistration());
+            vehicle.setBrand(updatedVehicle.getBrand());
+            vehicle.setModel(updatedVehicle.getModel());
+            vehicle.setColor(updatedVehicle.getColor());
+            vehicle.setMileage(updatedVehicle.getMileage());
+            vehicle.setMileagePrice(updatedVehicle.getMileagePrice());
+            vehicle.setBasePrice(updatedVehicle.getBasePrice());
+
+            if(vehicle instanceof Motorcycle && updatedVehicle instanceof Motorcycle) {
+                ((Motorcycle) vehicle).setMoteurcm3(((Motorcycle) updatedVehicle).getMoteurcm3());
+            } else if(vehicle instanceof UtilityVehicle && updatedVehicle instanceof UtilityVehicle) {
+                ((UtilityVehicle) vehicle).setVolumecm3(((UtilityVehicle) updatedVehicle).getVolumecm3());
+            }
+
+            return vehicleRepository.save(vehicle);
+        });
     }
 
-
-    public Vehicle saveVehicule(Vehicle vehicule) {
-        return vehicleRepository.save(vehicule); // Enregistre ou met à jour le véhicule
+    @Override
+    public boolean deleteVehicle(Long id) {
+        if (vehicleRepository.existsById(id)) {
+            vehicleRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
-
-
-    public void deleteVehicule(Long id) {
-        vehicleRepository.deleteById(id); // Supprime le véhicule par ID
-    }
-
 }

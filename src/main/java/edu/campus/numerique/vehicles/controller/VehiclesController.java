@@ -1,23 +1,17 @@
 package edu.campus.numerique.vehicles.controller;
 
-import edu.campus.numerique.vehicles.Car;
-import edu.campus.numerique.vehicles.Motorcycle;
-import edu.campus.numerique.vehicles.UtilityVehicle;
 import edu.campus.numerique.vehicles.Vehicle;
-import edu.campus.numerique.vehicles.repository.VehicleRepository;
+import edu.campus.numerique.vehicles.service.VehiclesService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
-
-
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,19 +20,19 @@ import java.util.Optional;
 @Tag(name = "Vehicles", description = "API pour la gestion des véhicules")
 public class VehiclesController {
 
+    private final VehiclesService vehiclesService;
 
     @Autowired
-    private VehicleRepository vehicleRepository;
-
-    //private RestTemplate restTemplate = new RestTemplate();
+    public VehiclesController(VehiclesService vehiclesService) {
+        this.vehiclesService = vehiclesService;
+    }
 
     @Operation(summary = "Récupérer tous les véhicules", description = "Renvoie la liste de tous les véhicules disponibles")
     @ApiResponse(responseCode = "200", description = "Liste de véhicules récupérée avec succès")
     @GetMapping
-    public List<Vehicle> getAllVehicles(){
-        return vehicleRepository.findAll();
+    public List<Vehicle> getAllVehicles() {
+        return vehiclesService.getAllVehicles();
     }
-
 
     @Operation(summary = "Récupérer un véhicule par ID", description = "Renvoie les détails d'un véhicule spécifique par son ID")
     @ApiResponses(value = {
@@ -46,15 +40,21 @@ public class VehiclesController {
             @ApiResponse(responseCode = "404", description = "Véhicule non trouvé")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Vehicle> getVehicleById(@PathVariable Long id){
-        Optional<Vehicle> vehicle = vehicleRepository.findById(id);
-        if(vehicle.isPresent()){
-            return new ResponseEntity<>(vehicle.get(), HttpStatus.OK);
-        }else{
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<Vehicle> getVehicleById(@PathVariable Long id) {
+        return vehiclesService.getVehicleById(id)
+                .map(vehicle -> new ResponseEntity<>(vehicle, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @GetMapping("/{id}/availability")
+    public boolean checkVehicleAvailability(
+            @PathVariable Long id,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+        return vehiclesService.isVehicleUnavailable(id, start, end);
+    }
 
     @Operation(summary = "Créer un nouveau véhicule", description = "Ajoute un nouveau véhicule dans la base de données")
     @ApiResponses(value = {
@@ -62,8 +62,9 @@ public class VehiclesController {
             @ApiResponse(responseCode = "400", description = "Requête invalide")
     })
     @PostMapping
-    public ResponseEntity<Vehicle> createVehicle(@RequestBody Vehicle newVehicle){
-            return new ResponseEntity<>(vehicleRepository.save(newVehicle), HttpStatus.CREATED);
+    public ResponseEntity<Vehicle> createVehicle(@RequestBody Vehicle newVehicle) {
+        Vehicle createdVehicle = vehiclesService.createVehicle(newVehicle);
+        return new ResponseEntity<>(createdVehicle, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Mettre à jour un véhicule existant", description = "Modifie les informations d'un véhicule existant par son ID")
@@ -72,27 +73,10 @@ public class VehiclesController {
             @ApiResponse(responseCode = "404", description = "Véhicule non trouvé")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Vehicle> updateVehicle(@PathVariable Long id, @RequestBody Vehicle updatedVehicle){
-
-    return vehicleRepository.findById(id).map(vehicle -> {
-        vehicle.setRegistration(updatedVehicle.getRegistration());
-        //vehicle.setKind(updatedVehicle.getKind());
-        vehicle.setBrand(updatedVehicle.getBrand());
-        vehicle.setModel(updatedVehicle.getModel());
-        vehicle.setColor(updatedVehicle.getColor());
-        vehicle.setMileage(updatedVehicle.getMileage());
-        vehicle.setMileagePrice(updatedVehicle.getMileagePrice());
-        vehicle.setBasePrice(updatedVehicle.getBasePrice());
-
-        if(vehicle instanceof Motorcycle && updatedVehicle instanceof Motorcycle){
-            ((Motorcycle) vehicle).setMoteurcm3(((Motorcycle) updatedVehicle).getMoteurcm3());
-        }else if(vehicle instanceof UtilityVehicle && updatedVehicle instanceof UtilityVehicle){
-            ((UtilityVehicle)vehicle).setVolumecm3(((UtilityVehicle) updatedVehicle).getVolumecm3());
-        }
-
-        vehicleRepository.save(vehicle);
-        return new ResponseEntity<>(vehicle, HttpStatus.OK);
-    }).orElseGet(() -> ResponseEntity.notFound().build() );
+    public ResponseEntity<Vehicle> updateVehicle(@PathVariable Long id, @RequestBody Vehicle updatedVehicle) {
+        return vehiclesService.updateVehicle(id, updatedVehicle)
+                .map(vehicle -> new ResponseEntity<>(vehicle, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @Operation(summary = "Supprimer un véhicule par ID", description = "Supprime un véhicule existant par son ID")
@@ -101,11 +85,10 @@ public class VehiclesController {
             @ApiResponse(responseCode = "404", description = "Véhicule non trouvé")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Vehicle> deleteVehicle(@PathVariable Long id){
-        if(vehicleRepository.existsById(id)){
-            vehicleRepository.deleteById(id);
+    public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
+        if (vehiclesService.deleteVehicle(id)) {
             return ResponseEntity.noContent().build();
-        }else{
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
