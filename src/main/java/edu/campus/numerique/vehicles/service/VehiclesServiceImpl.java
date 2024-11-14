@@ -52,7 +52,8 @@ public class VehiclesServiceImpl implements VehiclesService {
             vehicle.setMileage(updatedVehicle.getMileage());
             vehicle.setMileagePrice(updatedVehicle.getMileagePrice());
             vehicle.setBasePrice(updatedVehicle.getBasePrice());
-
+            vehicle.setUnavailableStartDate(updatedVehicle.getUnavailableStartDate());
+            vehicle.setUnavailableEndDate(updatedVehicle.getUnavailableEndDate());
             if(vehicle instanceof Motorcycle && updatedVehicle instanceof Motorcycle) {
                 ((Motorcycle) vehicle).setMoteurcm3(((Motorcycle) updatedVehicle).getMoteurcm3());
             } else if(vehicle instanceof UtilityVehicle && updatedVehicle instanceof UtilityVehicle) {

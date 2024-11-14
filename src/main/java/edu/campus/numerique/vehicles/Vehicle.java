@@ -22,7 +22,7 @@ import java.time.LocalDate;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Car.class, name = "car"),
         @JsonSubTypes.Type(value = Motorcycle.class, name = "motorcycle"),
-        @JsonSubTypes.Type(value = UtilityVehicle.class, name = "Utilityvehicle")
+        @JsonSubTypes.Type(value = UtilityVehicle.class, name = "utilityvehicle")
 
 })
 public abstract class Vehicle {
