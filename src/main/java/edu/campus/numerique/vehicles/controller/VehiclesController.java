@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/vehicles")
 @Tag(name = "Vehicles", description = "API pour la gestion des véhicules")
@@ -30,6 +31,8 @@ public class VehiclesController {
     @Operation(summary = "Récupérer tous les véhicules", description = "Renvoie la liste de tous les véhicules disponibles")
     @ApiResponse(responseCode = "200", description = "Liste de véhicules récupérée avec succès")
     @GetMapping
+
+
     public List<Vehicle> getAllVehicles() {
         return vehiclesService.getAllVehicles();
     }

@@ -14,11 +14,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "vehicles")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)//toutes les classes de la hiérarchie (classe parent et classes enfants) sont stockées dans une seule table de la base de données.
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "type"
-)
+
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Car.class, name = "car"),
         @JsonSubTypes.Type(value = Motorcycle.class, name = "motorcycle"),
